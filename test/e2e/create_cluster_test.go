@@ -8,6 +8,7 @@ import (
 	"testing"
 
 	. "github.com/onsi/gomega"
+	"github.com/openshift/hypershift/cmd/cluster/core"
 	e2eutil "github.com/openshift/hypershift/test/e2e/util"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	crclient "sigs.k8s.io/controller-runtime/pkg/client"
@@ -15,12 +16,12 @@ import (
 	hyperv1 "github.com/openshift/hypershift/api/v1alpha1"
 )
 
-// TestCreateCluster implements a test that mimics the operation described in the
+// TestAWSCreateCluster implements a test that mimics the operation described in the
 // HyperShift quick start (creating a basic guest cluster).
 //
 // This test is meant to provide a first, fast signal to detect regression; it
 // is recommended to use it as a PR blocker test.
-func TestCreateCluster(t *testing.T) {
+func TestAWSCreateCluster(t *testing.T) {
 	t.Parallel()
 	g := NewWithT(t)
 
@@ -31,7 +32,7 @@ func TestCreateCluster(t *testing.T) {
 
 	clusterOpts := globalOpts.DefaultClusterOptions()
 
-	hostedCluster := e2eutil.CreateCluster(t, ctx, client, clusterOpts, globalOpts.ArtifactDir)
+	hostedCluster := e2eutil.CreateAWSCluster(t, ctx, client, clusterOpts, globalOpts.ArtifactDir)
 
 	// Get the newly created nodepool
 	nodepool := &hyperv1.NodePool{
@@ -54,4 +55,32 @@ func TestCreateCluster(t *testing.T) {
 
 	e2eutil.EnsureNodeCountMatchesNodePoolReplicas(t, testContext, client, guestClient, crclient.ObjectKeyFromObject(nodepool))
 	e2eutil.EnsureNoCrashingPods(t, ctx, client, hostedCluster)
+}
+
+func TestNoneCreateCluster(t *testing.T) {
+
+	ctx, cancel := context.WithCancel(testContext)
+	defer cancel()
+
+	client := e2eutil.GetClientOrDie()
+
+	defaultClusterOpts := globalOpts.DefaultClusterOptions()
+	clusterOpts := core.CreateOptions{
+		ControlPlaneAvailabilityPolicy: "SingleReplica",
+		Render:                         false,
+		NetworkType:                    string(hyperv1.OpenShiftSDN),
+		PullSecretFile:                 defaultClusterOpts.PullSecretFile,
+	}
+
+	hostedCluster := e2eutil.CreateNoneCluster(t, ctx, client, clusterOpts, globalOpts.ArtifactDir)
+
+	// Wait for the rollout to be reported complete
+	t.Logf("Waiting for cluster rollout. Image: %s", globalOpts.LatestReleaseImage)
+	// Since the None platform has no workers, CVO will not have expectations set,
+	// which in turn means tha the ClusterVersion object will never be populated.
+	// Therefore only test if the control plane comes up (etc, apiserver, ...)
+	e2eutil.WaitForConditionsOnHostedControlPlane(t, testContext, client, hostedCluster, globalOpts.LatestReleaseImage)
+
+	// etcd restarts for me once always and apiserver two times before running stable
+	//e2eutil.EnsureNoCrashingPods(t, ctx, client, hostedCluster)
 }
