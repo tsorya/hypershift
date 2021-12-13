@@ -502,17 +502,22 @@ func (r *HostedControlPlaneReconciler) update(ctx context.Context, hostedControl
 		}
 	}
 
-	// If the cluster is marked paused, don't do any reconciliation work at all.
-	if cluster, err := util.GetOwnerCluster(ctx, r.Client, hostedControlPlane.ObjectMeta); err != nil {
-		return fmt.Errorf("failed to get owner cluster: %w", err)
-	} else {
-		if cluster == nil {
-			r.Log.Info("Cluster Controller has not yet set OwnerRef")
-			return nil
-		}
-		if annotations.IsPaused(cluster, hostedControlPlane) {
-			r.Log.Info("HostedControlPlane or linked Cluster is marked as paused. Won't reconcile")
-			return nil
+	switch hostedControlPlane.Spec.Platform.Type {
+	case hyperv1.NonePlatform:
+		// No CAPI cluster exists, checking for its existence is hopeless.
+	default:
+		// If the cluster is marked paused, don't do any reconciliation work at all.
+		if cluster, err := util.GetOwnerCluster(ctx, r.Client, hostedControlPlane.ObjectMeta); err != nil {
+			return fmt.Errorf("failed to get owner cluster: %w", err)
+		} else {
+			if cluster == nil {
+				r.Log.Info("Cluster Controller has not yet set OwnerRef")
+				return nil
+			}
+			if annotations.IsPaused(cluster, hostedControlPlane) {
+				r.Log.Info("HostedControlPlane or linked Cluster is marked as paused. Won't reconcile")
+				return nil
+			}
 		}
 	}
 
