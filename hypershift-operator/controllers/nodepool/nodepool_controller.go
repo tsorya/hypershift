@@ -1061,7 +1061,12 @@ func validateAutoscaling(nodePool *hyperv1.NodePool) error {
 
 func defaultNodePoolAMI(region string, releaseImage *releaseinfo.ReleaseImage) (string, error) {
 	// TODO: The architecture should be specified from the API
-	arch, foundArch := releaseImage.StreamMetadata.Architectures["x86_64"]
+	fmt.Println("11111111111111111111111111", releaseImage.StreamMetadata.Architectures)
+	arch, foundArch := releaseImage.StreamMetadata.Architectures["aarch64"]
+
+	fmt.Println("11111111111111111111111111", releaseImage.StreamMetadata.Architectures["aarch64"])
+	fmt.Println("22222222222222222222222222", releaseImage.StreamMetadata.Architectures["x86_64"])
+	//arch, foundArch := releaseImage.StreamMetadata.Architectures["aarch64"]
 	if !foundArch {
 		return "", fmt.Errorf("couldn't find OS metadata for architecture %q", "x64_64")
 	}

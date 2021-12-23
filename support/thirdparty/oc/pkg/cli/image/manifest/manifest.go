@@ -186,13 +186,15 @@ func ProcessManifestList(ctx context.Context, srcDigest digest.Digest, srcManife
 		}
 
 		switch {
-		case len(srcManifests) == 1 && !keepManifestList:
+		case len(srcManifests) > 1 && !keepManifestList:
 			manifestDigest, err := registryclient.ContentDigestForManifest(srcManifests[0], srcDigest.Algorithm())
 			if err != nil {
 				return nil, nil, "", err
 			}
+			fmt.Println("AAAAAAAAAAAAAAAAAAAAAAAAAA", srcManifests, srcManifests[0], manifestDigest)
 			return srcManifests, srcManifests[0], manifestDigest, nil
 		default:
+			fmt.Println("AAAAAAAAAAAAAAAAAAAAAAAAAA", srcManifests, manifestList, manifestDigest)
 			return append(srcManifests, manifestList), manifestList, manifestDigest, nil
 		}
 
