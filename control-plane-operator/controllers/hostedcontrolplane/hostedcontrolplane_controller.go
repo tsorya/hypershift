@@ -913,6 +913,31 @@ func (r *HostedControlPlaneReconciler) reconcileInfrastructureStatus(ctx context
 	return infraStatus, nil
 }
 
+//func (r *HostedControlPlaneReconciler) reconcileAPIServerServiceStatus(ctx context.Context, hcp *hyperv1.HostedControlPlane) (host string, port int32, err error) {
+//	serviceStrategy := servicePublishingStrategyByType(hcp, hyperv1.APIServer)
+//	if serviceStrategy == nil {
+//		err = fmt.Errorf("APIServer service strategy not specified")
+//		return
+//	}
+//
+//	if cpoutil.IsPublicHCP(hcp) {
+//		svc := manifests.KubeAPIServerService(hcp.Namespace)
+//		if err = r.Get(ctx, client.ObjectKeyFromObject(svc), svc); err != nil {
+//			if apierrors.IsNotFound(err) {
+//				err = nil
+//				return
+//			}
+//			err = fmt.Errorf("failed to get kube apiserver service: %w", err)
+//			return
+//		}
+//		p := kas.NewKubeAPIServerServiceParams(hcp)
+//		return kas.ReconcileServiceStatus(svc, serviceStrategy, p.APIServerPort)
+//
+//	}
+//
+//	return
+//}
+
 func (r *HostedControlPlaneReconciler) reconcileAPIServerServiceStatus(ctx context.Context, hcp *hyperv1.HostedControlPlane) (host string, port int32, err error) {
 	serviceStrategy := servicePublishingStrategyByType(hcp, hyperv1.APIServer)
 	if serviceStrategy == nil {
@@ -935,6 +960,29 @@ func (r *HostedControlPlaneReconciler) reconcileAPIServerServiceStatus(ctx conte
 
 	}
 
+	if serviceStrategy.Type == hyperv1.Route {
+		var route *routev1.Route
+		svc := manifests.KubeAPIServerService(hcp.Namespace)
+		if err = r.Get(ctx, client.ObjectKeyFromObject(svc), svc); err != nil {
+			if apierrors.IsNotFound(err) {
+				err = nil
+				return
+			}
+			err = fmt.Errorf("failed to get kube apiserver service: %w", err)
+			return
+		}
+
+		route = manifests.KasServerRoute(hcp.Namespace)
+		if err = r.Get(ctx, client.ObjectKeyFromObject(route), route); err != nil {
+			if apierrors.IsNotFound(err) {
+				err = nil
+				return
+			}
+			err = fmt.Errorf("failed to get kube-api route: %w", err)
+			return
+		}
+		return kas.ReconcileServiceStatusWithRoute(route)
+	}
 	return kas.ReconcilePrivateServiceStatus(hcp.Name)
 }
 

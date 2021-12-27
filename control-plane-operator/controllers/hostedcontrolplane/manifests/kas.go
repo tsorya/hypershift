@@ -2,6 +2,7 @@ package manifests
 
 import (
 	"fmt"
+	routev1 "github.com/openshift/api/route/v1"
 
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
@@ -152,6 +153,15 @@ func KASAuthenticationTokenWebhookConfigSecret(controlPlaneNamespace string) *co
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "kas-authentication-token-webhook-config",
 			Namespace: controlPlaneNamespace,
+		},
+	}
+}
+
+func KasServerRoute(hostedClusterNamespace string) *routev1.Route {
+	return &routev1.Route{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      KubeAPIServerServiceName,
+			Namespace: hostedClusterNamespace,
 		},
 	}
 }

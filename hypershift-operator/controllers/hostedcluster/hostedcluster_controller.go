@@ -170,6 +170,7 @@ func (r *HostedClusterReconciler) SetupWithManager(mgr ctrl.Manager, createOrUpd
 		})
 
 	if r.ManagementClusterCapabilities.Has(capabilities.CapabilityRoute) {
+		fmt.Println("ROUTEOUTEOUTOEUTOEUTOEUTOEUT 11111111111111111111")
 		builder.Watches(&source.Kind{Type: &routev1.Route{}}, handler.EnqueueRequestsFromMapFunc(enqueueParentHostedCluster))
 	}
 
@@ -1395,6 +1396,7 @@ func (r *HostedClusterReconciler) reconcileIgnitionServer(ctx context.Context, c
 	var ignitionServerAddress string
 	switch serviceStrategy.Type {
 	case hyperv1.Route:
+		fmt.Println("4444444444444444444 Im in route")
 		// Reconcile route
 		ignitionServerRoute := ignitionserver.Route(controlPlaneNamespace.Name)
 		if result, err := createOrUpdate(ctx, r.Client, ignitionServerRoute, func() error {
@@ -1436,7 +1438,7 @@ func (r *HostedClusterReconciler) reconcileIgnitionServer(ctx context.Context, c
 		if serviceStrategy.NodePort == nil {
 			return fmt.Errorf("nodeport metadata not specified for ignition service")
 		}
-		ignitionServerAddress = serviceStrategy.NodePort.Address
+		r.Log.Info("AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA", serviceStrategy.NodePort.Address)
 	default:
 		return fmt.Errorf("unknown service strategy type for ignition service: %s", serviceStrategy.Type)
 	}
