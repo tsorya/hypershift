@@ -2,6 +2,7 @@ package kas
 
 import (
 	"fmt"
+	routev1 "github.com/openshift/api/route/v1"
 
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -35,6 +36,8 @@ func ReconcileService(svc *corev1.Service, strategy *hyperv1.ServicePublishingSt
 		if portSpec.NodePort == 0 && strategy.NodePort != nil {
 			portSpec.NodePort = strategy.NodePort.Port
 		}
+	case hyperv1.Route:
+		svc.Spec.Type = corev1.ServiceTypeClusterIP
 	default:
 		return fmt.Errorf("invalid publishing strategy for Kube API server service: %s", strategy.Type)
 	}
@@ -71,6 +74,17 @@ func ReconcileServiceStatus(svc *corev1.Service, strategy *hyperv1.ServicePublis
 		host = strategy.NodePort.Address
 	}
 	return
+}
+
+
+func ReconcileServiceStatusWithRoute(route *routev1.Route) (host string, port int32, err error) {
+	if route.Spec.Host == "" {
+		return
+	}
+	port = 6443
+	host = route.Spec.Host
+
+	return host, port,  nil
 }
 
 func ReconcilePrivateService(svc *corev1.Service, owner *metav1.OwnerReference) error {
