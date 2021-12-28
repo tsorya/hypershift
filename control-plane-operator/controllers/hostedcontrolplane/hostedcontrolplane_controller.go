@@ -145,7 +145,7 @@ func (r *HostedControlPlaneReconciler) SetupWithManager(mgr ctrl.Manager) error 
 
 func (r *HostedControlPlaneReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
 	r.Log = ctrl.LoggerFrom(ctx)
-	r.Log.Info("Reconciling")
+	r.Log.Info("Reconciling 5555555555555555555555555")
 
 	// Fetch the hostedControlPlane instance
 	hostedControlPlane := &hyperv1.HostedControlPlane{}
@@ -172,6 +172,7 @@ func (r *HostedControlPlaneReconciler) Reconcile(ctx context.Context, req ctrl.R
 		return ctrl.Result{}, nil
 	}
 
+	r.Log.Info("Reconciling 111111111111111111111111111111")
 	// Ensure the hostedControlPlane has a finalizer for cleanup
 	if !controllerutil.ContainsFinalizer(hostedControlPlane, finalizer) {
 		controllerutil.AddFinalizer(hostedControlPlane, finalizer)
@@ -182,6 +183,7 @@ func (r *HostedControlPlaneReconciler) Reconcile(ctx context.Context, req ctrl.R
 
 	// Reconcile global configuration validation status
 	{
+		r.Log.Info("Reconciling 2222222222222222222222222222222222")
 		condition := metav1.Condition{
 			Type:               string(hyperv1.ValidHostedControlPlaneConfiguration),
 			ObservedGeneration: hostedControlPlane.Generation,
@@ -204,6 +206,7 @@ func (r *HostedControlPlaneReconciler) Reconcile(ctx context.Context, req ctrl.R
 
 	// Reconcile etcd cluster status
 	{
+		r.Log.Info("Reconciling 333333333333333333333333333333333")
 		newCondition := metav1.Condition{
 			Type:   string(hyperv1.EtcdAvailable),
 			Status: metav1.ConditionUnknown,
@@ -253,6 +256,7 @@ func (r *HostedControlPlaneReconciler) Reconcile(ctx context.Context, req ctrl.R
 
 	// Reconcile Kube APIServer status
 	{
+		r.Log.Info("Reconciling 4444444444444444444444444444444444")
 		newCondition := metav1.Condition{
 			Type:   string(hyperv1.KubeAPIServerAvailable),
 			Status: metav1.ConditionUnknown,
@@ -293,6 +297,7 @@ func (r *HostedControlPlaneReconciler) Reconcile(ctx context.Context, req ctrl.R
 
 	// Reconcile hostedcontrolplane availability and Ready flag
 	{
+		r.Log.Info("Reconciling 44444444444444444444444444444444")
 		newCondition := metav1.Condition{
 			Type:   string(hyperv1.HostedControlPlaneAvailable),
 			Status: metav1.ConditionUnknown,
@@ -396,6 +401,7 @@ func (r *HostedControlPlaneReconciler) Reconcile(ctx context.Context, req ctrl.R
 		meta.SetStatusCondition(&hostedControlPlane.Status.Conditions, newCondition)
 		r.Log.Info("Finished reconciling hosted cluster version conditions")
 	}
+	r.Log.Info("Reconciling 666666666666666666666666666666666666666666")
 
 	kubeconfig := manifests.KASExternalKubeconfigSecret(hostedControlPlane.Namespace, hostedControlPlane.Spec.KubeConfig)
 	if err := r.Get(ctx, client.ObjectKeyFromObject(kubeconfig), kubeconfig); err != nil {
@@ -412,6 +418,7 @@ func (r *HostedControlPlaneReconciler) Reconcile(ctx context.Context, req ctrl.R
 		}
 	}
 
+	r.Log.Info("Reconciling 777777777777777777777777777777777777")
 	kubeadminPassword := common.KubeadminPasswordSecret(hostedControlPlane.Namespace)
 	if err := r.Get(ctx, client.ObjectKeyFromObject(kubeadminPassword), kubeadminPassword); err != nil {
 		if !apierrors.IsNotFound(err) {
@@ -461,6 +468,7 @@ func (r *HostedControlPlaneReconciler) Reconcile(ctx context.Context, req ctrl.R
 		return ctrl.Result{}, fmt.Errorf("failed to update status: %w", err)
 	}
 
+	fmt.Println("GOIGN TO UDPATE")
 	// Perform the hosted control plane reconciliation
 	if err := r.update(ctx, hostedControlPlane); err != nil {
 		return ctrl.Result{}, fmt.Errorf("failed to update control plane: %w", err)
@@ -755,6 +763,17 @@ func (r *HostedControlPlaneReconciler) reconcileAPIServerService(ctx context.Con
 		}
 	}
 
+	if serviceStrategy.Type != hyperv1.Route {
+		return nil
+	}
+	kasRoute := manifests.KasServerRoute(hcp.Namespace)
+	fmt.Println("IIIIIIIIIIII creating kas route")
+	if _, err := r.CreateOrUpdate(ctx, r.Client, kasRoute, func() error {
+		return kas.ReconcileRoute(kasRoute, p.OwnerRef, cpoutil.IsPrivateHCP(hcp))
+	}); err != nil {
+		return fmt.Errorf("failed to reconcile kas server route: %w", err)
+	}
+
 	return nil
 }
 
@@ -940,6 +959,7 @@ func (r *HostedControlPlaneReconciler) reconcileAPIServerServiceStatus(ctx conte
 	}
 
 	if serviceStrategy.Type == hyperv1.Route {
+		fmt.Println("JJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJjjj")
 		var route *routev1.Route
 		svc := manifests.KubeAPIServerService(hcp.Namespace)
 		if err = r.Get(ctx, client.ObjectKeyFromObject(svc), svc); err != nil {
