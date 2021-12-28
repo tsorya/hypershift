@@ -436,6 +436,7 @@ func (r *HostedControlPlaneReconciler) Reconcile(ctx context.Context, req ctrl.R
 	// image version will be considered rolled out if the hosted CVO reports
 	// having completed the rollout of the semantic version matching the release
 	// image specified on the HCP.
+	r.Log.Info("Reconciling 8888888888888888888888888888888888888888")
 	if hostedControlPlane.Status.ReleaseImage != hostedControlPlane.Spec.ReleaseImage {
 		releaseImage, err := r.LookupReleaseImage(ctx, hostedControlPlane)
 		if err != nil {
@@ -890,6 +891,7 @@ func (r *HostedControlPlaneReconciler) reconcileInfrastructureStatus(ctx context
 	var infraStatus InfrastructureStatus
 	var err error
 	if infraStatus.APIHost, infraStatus.APIPort, err = r.reconcileAPIServerServiceStatus(ctx, hcp); err != nil {
+		fmt.Println("ERORORORORORORORORORRORORORORORORORORORORORO")
 		return infraStatus, err
 	}
 	if infraStatus.KonnectivityHost, infraStatus.KonnectivityPort, err = r.reconcileKonnectivityServiceStatus(ctx, hcp); err != nil {
@@ -943,21 +945,6 @@ func (r *HostedControlPlaneReconciler) reconcileAPIServerServiceStatus(ctx conte
 		return
 	}
 
-	if cpoutil.IsPublicHCP(hcp) {
-		svc := manifests.KubeAPIServerService(hcp.Namespace)
-		if err = r.Get(ctx, client.ObjectKeyFromObject(svc), svc); err != nil {
-			if apierrors.IsNotFound(err) {
-				err = nil
-				return
-			}
-			err = fmt.Errorf("failed to get kube apiserver service: %w", err)
-			return
-		}
-		p := kas.NewKubeAPIServerServiceParams(hcp)
-		return kas.ReconcileServiceStatus(svc, serviceStrategy, p.APIServerPort)
-
-	}
-
 	if serviceStrategy.Type == hyperv1.Route {
 		fmt.Println("JJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJjjj")
 		var route *routev1.Route
@@ -982,6 +969,25 @@ func (r *HostedControlPlaneReconciler) reconcileAPIServerServiceStatus(ctx conte
 		}
 		return kas.ReconcileServiceStatusWithRoute(route)
 	}
+
+	fmt.Println("LPLPLPLPLPLPLPLPLPLPLPLPLPLPLPLPLPLPLPLPLPLPLPLP")
+	if cpoutil.IsPublicHCP(hcp) {
+
+		svc := manifests.KubeAPIServerService(hcp.Namespace)
+		if err = r.Get(ctx, client.ObjectKeyFromObject(svc), svc); err != nil {
+			if apierrors.IsNotFound(err) {
+				err = nil
+				return
+			}
+			err = fmt.Errorf("failed to get kube apiserver service: %w", err)
+			return
+		}
+		p := kas.NewKubeAPIServerServiceParams(hcp)
+		return kas.ReconcileServiceStatus(svc, serviceStrategy, p.APIServerPort)
+
+	}
+
+	fmt.Println("LPLPLPLPLPLPLPLPLPLPLPLPLPLPLPLPLPLPLPLPLPLPLPLP 111111111111111111111111111111111")
 	return kas.ReconcilePrivateServiceStatus(hcp.Name)
 }
 

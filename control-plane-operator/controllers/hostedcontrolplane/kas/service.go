@@ -106,14 +106,15 @@ func ReconcileRoute(route *routev1.Route, ownerRef config.OwnerRef, private bool
 
 
 func ReconcileServiceStatusWithRoute(route *routev1.Route) (host string, port int32, err error) {
-	fmt.Println("DDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDD")
+	fmt.Println("DDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDD ReconcileServiceStatusWithRoute")
 	if route.Spec.Host == "" {
-		fmt.Println("FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF")
+		fmt.Println("FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF ReconcileServiceStatusWithRoute")
 		return
 	}
 	port = 6443
 	host = route.Spec.Host
 
+	fmt.Println("FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF ReconcileServiceStatusWithRoute host+port", host, port)
 	return host, port,  nil
 }
 
