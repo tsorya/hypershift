@@ -207,6 +207,7 @@ func (r *HostedClusterReconciler) Reconcile(ctx context.Context, req ctrl.Reques
 		}
 	}
 
+	fmt.Println("OOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOO")
 	// If deleted or missing, clean up and return early.
 	// TODO: This should be incorporated with status/reconcile
 	if isMissing || !hcluster.DeletionTimestamp.IsZero() {
@@ -236,6 +237,7 @@ func (r *HostedClusterReconciler) Reconcile(ctx context.Context, req ctrl.Reques
 
 	// Set kubeconfig status
 	{
+		fmt.Println("PPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPP")
 		kubeConfigSecret := manifests.KubeConfigSecret(hcluster.Namespace, hcluster.Name)
 		err := r.Client.Get(ctx, client.ObjectKeyFromObject(kubeConfigSecret), kubeConfigSecret)
 		if err != nil {
@@ -249,6 +251,7 @@ func (r *HostedClusterReconciler) Reconcile(ctx context.Context, req ctrl.Reques
 
 	// Set kubeadminPassword status
 	{
+		fmt.Println("SSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSS")
 		kubeadminPasswordSecret := manifests.KubeadminPasswordSecret(hcluster.Namespace, hcluster.Name)
 		err := r.Client.Get(ctx, client.ObjectKeyFromObject(kubeadminPasswordSecret), kubeadminPasswordSecret)
 		if err != nil {
@@ -262,6 +265,7 @@ func (r *HostedClusterReconciler) Reconcile(ctx context.Context, req ctrl.Reques
 
 	// Set version status
 	{
+		fmt.Println("FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF")
 		controlPlaneNamespace := manifests.HostedControlPlaneNamespace(hcluster.Namespace, hcluster.Name)
 		hcp := controlplaneoperator.HostedControlPlane(controlPlaneNamespace.Name, hcluster.Name)
 		err := r.Client.Get(ctx, client.ObjectKeyFromObject(hcp), hcp)
@@ -303,6 +307,8 @@ func (r *HostedClusterReconciler) Reconcile(ctx context.Context, req ctrl.Reques
 	// conditions (so that it could incorporate e.g. HostedControlPlane and IgnitionServer
 	// availability in the ultimate HostedCluster Available condition)
 	{
+
+		fmt.Println("PPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPP")
 		controlPlaneNamespace := manifests.HostedControlPlaneNamespace(hcluster.Namespace, hcluster.Name)
 		hcp := controlplaneoperator.HostedControlPlane(controlPlaneNamespace.Name, hcluster.Name)
 		err := r.Client.Get(ctx, client.ObjectKeyFromObject(hcp), hcp)
@@ -354,6 +360,7 @@ func (r *HostedClusterReconciler) Reconcile(ctx context.Context, req ctrl.Reques
 
 	// Set ValidHostedControlPlaneConfiguration condition
 	{
+		fmt.Println("ZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZ")
 		controlPlaneNamespace := manifests.HostedControlPlaneNamespace(hcluster.Namespace, hcluster.Name)
 		hcp := controlplaneoperator.HostedControlPlane(controlPlaneNamespace.Name, hcluster.Name)
 		err := r.Client.Get(ctx, client.ObjectKeyFromObject(hcp), hcp)
@@ -382,6 +389,7 @@ func (r *HostedClusterReconciler) Reconcile(ctx context.Context, req ctrl.Reques
 
 	// Set Ignition Server endpoint
 	{
+		fmt.Println("XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX")
 		serviceStrategy := servicePublishingStrategyByType(hcluster, hyperv1.Ignition)
 		if serviceStrategy == nil {
 			// We don't return the error here as reconciling won't solve the input problem.
@@ -427,6 +435,7 @@ func (r *HostedClusterReconciler) Reconcile(ctx context.Context, req ctrl.Reques
 
 	// Set the ignition server availability condition by checking its deployment.
 	{
+		fmt.Println("CCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCC")
 		// Assume the server is unavailable unless proven otherwise.
 		newCondition := metav1.Condition{
 			Type:   string(hyperv1.IgnitionEndpointAvailable),
@@ -469,9 +478,13 @@ func (r *HostedClusterReconciler) Reconcile(ctx context.Context, req ctrl.Reques
 		span.AddEvent("updated ignition endpoint condition", trace.WithAttributes(attribute.String(newCondition.Type, string(newCondition.Status))))
 	}
 
+	fmt.Println("NNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNN")
+
 	// Persist status updates
 	if err := r.Client.Status().Update(ctx, hcluster); err != nil {
+		fmt.Println("NNNNNNNNNNNNNNNNNNNNNNNNNNN 1111111111111111111111111111111111")
 		if apierrors.IsConflict(err) {
+			fmt.Println("NNNNNNNNNNNNNNNNNNNNNNNNNNN 22222222222222222222222222222222222222")
 			return ctrl.Result{Requeue: true}, nil
 		}
 		return ctrl.Result{}, fmt.Errorf("failed to update status: %w", err)
@@ -479,6 +492,7 @@ func (r *HostedClusterReconciler) Reconcile(ctx context.Context, req ctrl.Reques
 
 	// Part two: reconcile the state of the world
 
+	fmt.Println("NNNNNNNNNNNNNNNNNNNNNNNNNNN 333333333333333333333333333333333333333333333333")
 	// Ensure the cluster has a finalizer for cleanup and update right away.
 	if !controllerutil.ContainsFinalizer(hcluster, finalizer) {
 		controllerutil.AddFinalizer(hcluster, finalizer)
@@ -492,11 +506,13 @@ func (r *HostedClusterReconciler) Reconcile(ctx context.Context, req ctrl.Reques
 
 	// Block here if the cluster configuration does not pass validation
 	{
+		fmt.Println("NNNNNNNNNNNNNNNNNNNNNNNNNNN 44444444444444444444444444444444444444444444444444444444444")
 		validConfig := meta.FindStatusCondition(hcluster.Status.Conditions, string(hyperv1.ValidHostedClusterConfiguration))
 		if validConfig != nil && validConfig.Status == metav1.ConditionFalse {
 			r.Log.Info("Configuration is invalid, reconciliation is blocked")
 			return ctrl.Result{}, nil
 		}
+		fmt.Println("NNNNNNNNNNNNNNNNNNNNNNNNNNN 55555555555555555555555555555555555555555555555555555555555555")
 		supportedHostedCluster := meta.FindStatusCondition(hcluster.Status.Conditions, string(hyperv1.SupportedHostedCluster))
 		if supportedHostedCluster != nil && supportedHostedCluster.Status == metav1.ConditionFalse {
 			r.Log.Info("Hosted Cluster is not supported by operator configuration, reconciliation is blocked")
@@ -506,6 +522,7 @@ func (r *HostedClusterReconciler) Reconcile(ctx context.Context, req ctrl.Reques
 
 	createOrUpdate := r.createOrUpdate(req)
 
+	fmt.Println("NNNNNNNNNNNNNNNNNNNNNNNNNNN 6666666666666666666666666666666666666666666666666666666666")
 	// Reconcile the hosted cluster namespace
 	controlPlaneNamespace := manifests.HostedControlPlaneNamespace(hcluster.Namespace, hcluster.Name)
 	_, err = createOrUpdate(ctx, r.Client, controlPlaneNamespace, func() error {
@@ -522,6 +539,7 @@ func (r *HostedClusterReconciler) Reconcile(ctx context.Context, req ctrl.Reques
 		return ctrl.Result{}, fmt.Errorf("failed to reconcile namespace: %w", err)
 	}
 
+	fmt.Println("NNNNNNNNNNNNNNNNNNNNNNNNNNN 7777777777777777777777777777777777777777777777777")
 	// Reconcile Platform specifics.
 	p, err := platform.GetPlatform(hcluster)
 	if err != nil {
@@ -537,6 +555,7 @@ func (r *HostedClusterReconciler) Reconcile(ctx context.Context, req ctrl.Reques
 	// Reconcile the HostedControlPlane pull secret by resolving the source secret
 	// reference from the HostedCluster and syncing the secret in the control plane namespace.
 	{
+		fmt.Println("NNNNNNNNNNNNNNNNNNNNNNNNNNN 88888888888888888888888888888888888888888888888888888888")
 		var src corev1.Secret
 		if err := r.Client.Get(ctx, client.ObjectKey{Namespace: hcluster.GetNamespace(), Name: hcluster.Spec.PullSecret.Name}, &src); err != nil {
 			return ctrl.Result{}, fmt.Errorf("failed to get pull secret %s: %w", hcluster.Spec.PullSecret.Name, err)
@@ -559,6 +578,7 @@ func (r *HostedClusterReconciler) Reconcile(ctx context.Context, req ctrl.Reques
 		}
 	}
 
+	fmt.Println("NNNNNNNNNNNNNNNNNNNNNNNNNNN 999999999999999999999999999999999999999999999999999999999")
 	// Reconcile the HostedControlPlane Secret Encryption Info
 	if hcluster.Spec.SecretEncryption != nil {
 		r.Log.Info("Reconciling secret encryption configuration")
@@ -899,28 +919,33 @@ func (r *HostedClusterReconciler) Reconcile(ctx context.Context, req ctrl.Reques
 		return ctrl.Result{}, fmt.Errorf("failed to reconcile capi provider: %w", err)
 	}
 
+	fmt.Println("BBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBB")
 	// Reconcile the autoscaler
 	err = r.reconcileAutoscaler(ctx, createOrUpdate, hcluster, hcp)
 	if err != nil {
 		return ctrl.Result{}, fmt.Errorf("failed to reconcile autoscaler: %w", err)
 	}
 
+	fmt.Println("VVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVV")
 	// Reconcile the control plane operator
 	err = r.reconcileControlPlaneOperator(ctx, createOrUpdate, hcluster, hcp)
 	if err != nil {
 		return ctrl.Result{}, fmt.Errorf("failed to reconcile control plane operator: %w", err)
 	}
 
+	fmt.Println("TTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTT")
 	// Reconcile the Ignition server
 	if err = r.reconcileIgnitionServer(ctx, createOrUpdate, hcluster); err != nil {
 		return ctrl.Result{}, fmt.Errorf("failed to reconcile ignition server: %w", err)
 	}
 
+	fmt.Println("YYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYY")
 	// Reconcile the machine config server
 	if err = r.reconcileMachineConfigServer(ctx, createOrUpdate, hcluster); err != nil {
 		return ctrl.Result{}, fmt.Errorf("failed to reconcile machine config server: %w", err)
 	}
 
+	fmt.Println("UUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUU")
 	if err = r.reconcileMachineApprover(ctx, createOrUpdate, hcluster, hcp); err != nil {
 		return ctrl.Result{}, fmt.Errorf("failed to reconcile machine approver: %w", err)
 	}
@@ -1396,7 +1421,7 @@ func (r *HostedClusterReconciler) reconcileIgnitionServer(ctx context.Context, c
 	var ignitionServerAddress string
 	switch serviceStrategy.Type {
 	case hyperv1.Route:
-		fmt.Println("4444444444444444444 Im in route")
+		fmt.Println("4444444444444444444 Im in route AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA")
 		// Reconcile route
 		ignitionServerRoute := ignitionserver.Route(controlPlaneNamespace.Name)
 		if result, err := createOrUpdate(ctx, r.Client, ignitionServerRoute, func() error {

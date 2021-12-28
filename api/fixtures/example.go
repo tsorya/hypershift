@@ -356,7 +356,8 @@ func (o ExampleOptions) getServicePublishingStrategyMappingByAPIServerAddress(AP
 		{
 			Service: hyperv1.APIServer,
 			ServicePublishingStrategy: hyperv1.ServicePublishingStrategy{
-				Type:     hyperv1.Route,
+				Type:     hyperv1.NodePort,
+				NodePort: &hyperv1.NodePortPublishingStrategy{Address: APIServerAddress},
 			},
 		},
 		{

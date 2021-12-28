@@ -3,6 +3,9 @@ package kas
 import (
 	"fmt"
 	routev1 "github.com/openshift/api/route/v1"
+	"github.com/openshift/hypershift/control-plane-operator/controllers/hostedcontrolplane/ingress"
+	"github.com/openshift/hypershift/control-plane-operator/controllers/hostedcontrolplane/manifests"
+	"github.com/openshift/hypershift/support/config"
 
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -37,6 +40,7 @@ func ReconcileService(svc *corev1.Service, strategy *hyperv1.ServicePublishingSt
 			portSpec.NodePort = strategy.NodePort.Port
 		}
 	case hyperv1.Route:
+		fmt.Println("888888888888888888888888888888888888888")
 		svc.Spec.Type = corev1.ServiceTypeClusterIP
 	default:
 		return fmt.Errorf("invalid publishing strategy for Kube API server service: %s", strategy.Type)
@@ -46,6 +50,7 @@ func ReconcileService(svc *corev1.Service, strategy *hyperv1.ServicePublishingSt
 }
 
 func ReconcileServiceStatus(svc *corev1.Service, strategy *hyperv1.ServicePublishingStrategy, apiServerPort int) (host string, port int32, err error) {
+	fmt.Println("KAKAKAKAKAKAKAKAKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKK")
 	switch strategy.Type {
 	case hyperv1.LoadBalancer:
 		if len(svc.Status.LoadBalancer.Ingress) == 0 {
@@ -77,8 +82,33 @@ func ReconcileServiceStatus(svc *corev1.Service, strategy *hyperv1.ServicePublis
 }
 
 
+func ReconcileRoute(route *routev1.Route, ownerRef config.OwnerRef, private bool) error {
+	ownerRef.ApplyTo(route)
+	if private {
+		if route.Labels == nil {
+			route.Labels = map[string]string{}
+		}
+		route.Labels[ingress.HypershiftRouteLabel] = route.GetNamespace()
+		route.Spec.Host = fmt.Sprintf("%s.apps.%s.hypershift.local", route.Name, ownerRef.Reference.Name)
+	}
+	route.Spec.To = routev1.RouteTargetReference{
+		Kind: "Service",
+		Name: manifests.KasServerRoute(route.Namespace).Name,
+	}
+	route.Spec.TLS = &routev1.TLSConfig{
+		Termination: routev1.TLSTerminationPassthrough,
+	}
+	route.Spec.Port = &routev1.RoutePort{
+		TargetPort: intstr.FromInt(6443),
+	}
+	return nil
+}
+
+
 func ReconcileServiceStatusWithRoute(route *routev1.Route) (host string, port int32, err error) {
+	fmt.Println("DDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDD")
 	if route.Spec.Host == "" {
+		fmt.Println("FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF")
 		return
 	}
 	port = 6443
