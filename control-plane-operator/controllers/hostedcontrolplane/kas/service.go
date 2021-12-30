@@ -111,7 +111,7 @@ func ReconcileServiceStatusWithRoute(route *routev1.Route) (host string, port in
 		fmt.Println("FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF ReconcileServiceStatusWithRoute")
 		return
 	}
-	port = 6443
+	port = 443
 	host = route.Spec.Host
 
 	fmt.Println("FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF ReconcileServiceStatusWithRoute host+port", host, port)
