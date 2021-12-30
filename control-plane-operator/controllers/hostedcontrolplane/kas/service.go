@@ -15,6 +15,10 @@ import (
 	"github.com/openshift/hypershift/support/util"
 )
 
+
+const kasRouterExternalPort = 9443
+
+
 func ReconcileService(svc *corev1.Service, strategy *hyperv1.ServicePublishingStrategy, owner *metav1.OwnerReference, apiServerPort int, isPublic bool) error {
 	util.EnsureOwnerRef(svc, owner)
 	svc.Spec.Selector = kasLabels()
@@ -98,9 +102,9 @@ func ReconcileRoute(route *routev1.Route, ownerRef config.OwnerRef, private bool
 	route.Spec.TLS = &routev1.TLSConfig{
 		Termination: routev1.TLSTerminationPassthrough,
 	}
-	route.Spec.Port = &routev1.RoutePort{
-		TargetPort: intstr.FromInt(6443),
-	}
+	//route.Spec.Port = &routev1.RoutePort{
+	//	TargetPort: intstr.FromInt(kasRouterExternalPort),
+	//}
 	return nil
 }
 
@@ -111,7 +115,7 @@ func ReconcileServiceStatusWithRoute(route *routev1.Route) (host string, port in
 		fmt.Println("FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF ReconcileServiceStatusWithRoute")
 		return
 	}
-	port = 443
+	//port = kasRouterExternalPort
 	host = route.Spec.Host
 
 	fmt.Println("FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF ReconcileServiceStatusWithRoute host+port", host, port)

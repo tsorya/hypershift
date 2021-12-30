@@ -1547,6 +1547,7 @@ func (r *HostedControlPlaneReconciler) reconcileKubeAPIServer(ctx context.Contex
 	externalKubeconfigSecret := manifests.KASExternalKubeconfigSecret(hcp.Namespace, hcp.Spec.KubeConfig)
 	if _, err := r.CreateOrUpdate(ctx, r, externalKubeconfigSecret, func() error {
 		if cpoutil.IsPublicHCP(hcp) {
+			fmt.Println("IsPublicHCP IsPublicHCP IsPublicHCP IsPublicHCP IsPublicHCP IsPublicHCP IsPublicHCP vvIsPublicHCPIsPublicHCPIsPublicHCP")
 			return kas.ReconcileExternalKubeconfigSecret(externalKubeconfigSecret, clientCertSecret, rootCA, p.OwnerRef, p.ExternalURL(), p.ExternalKubeconfigKey())
 		}
 		return kas.ReconcileExternalKubeconfigSecret(externalKubeconfigSecret, clientCertSecret, rootCA, p.OwnerRef, p.InternalURL(), p.ExternalKubeconfigKey())
