@@ -1544,11 +1544,12 @@ func (r *HostedControlPlaneReconciler) reconcileKubeAPIServer(ctx context.Contex
 		return fmt.Errorf("failed to reconcile localhost kubeconfig secret: %w", err)
 	}
 
+	serviceStrategy := servicePublishingStrategyByType(hcp, hyperv1.APIServer)
 	externalKubeconfigSecret := manifests.KASExternalKubeconfigSecret(hcp.Namespace, hcp.Spec.KubeConfig)
 	if _, err := r.CreateOrUpdate(ctx, r, externalKubeconfigSecret, func() error {
 		if cpoutil.IsPublicHCP(hcp) {
 			fmt.Println("IsPublicHCP IsPublicHCP IsPublicHCP IsPublicHCP IsPublicHCP IsPublicHCP IsPublicHCP vvIsPublicHCPIsPublicHCPIsPublicHCP")
-			return kas.ReconcileExternalKubeconfigSecret(externalKubeconfigSecret, clientCertSecret, rootCA, p.OwnerRef, p.ExternalURL(), p.ExternalKubeconfigKey())
+			return kas.ReconcileExternalKubeconfigSecret(externalKubeconfigSecret, clientCertSecret, rootCA, p.OwnerRef, p.ExternalURL(serviceStrategy.Type == hyperv1.Route), p.ExternalKubeconfigKey())
 		}
 		return kas.ReconcileExternalKubeconfigSecret(externalKubeconfigSecret, clientCertSecret, rootCA, p.OwnerRef, p.InternalURL(), p.ExternalKubeconfigKey())
 	}); err != nil {
@@ -1560,7 +1561,7 @@ func (r *HostedControlPlaneReconciler) reconcileKubeAPIServer(ctx context.Contex
 		if cpoutil.IsPrivateHCP(hcp) {
 			return kas.ReconcileBootstrapKubeconfigSecret(bootstrapKubeconfigSecret, bootstrapClientCertSecret, rootCA, p.OwnerRef, p.InternalURL())
 		}
-		return kas.ReconcileBootstrapKubeconfigSecret(bootstrapKubeconfigSecret, bootstrapClientCertSecret, rootCA, p.OwnerRef, p.ExternalURL())
+		return kas.ReconcileBootstrapKubeconfigSecret(bootstrapKubeconfigSecret, bootstrapClientCertSecret, rootCA, p.OwnerRef, p.ExternalURL(serviceStrategy.Type == hyperv1.Route))
 	}); err != nil {
 		return fmt.Errorf("failed to reconcile bootstrap kubeconfig secret: %w", err)
 	}

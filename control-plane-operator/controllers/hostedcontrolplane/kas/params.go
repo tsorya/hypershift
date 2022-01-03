@@ -317,8 +317,11 @@ func (p *KubeAPIServerParams) AuditPolicyProfile() configv1.AuditProfileType {
 	}
 }
 
-func (p *KubeAPIServerParams) ExternalURL() string {
-	return fmt.Sprintf("https://%s:%d", p.ExternalAddress, p.ExternalPort)
+func (p *KubeAPIServerParams) ExternalURL(isRouter bool) string {
+	if isRouter {
+		return fmt.Sprintf("https://%s:443", p.ExternalAddress)
+	}
+	return fmt.Sprintf("https://10.1.178.20:6080")
 }
 
 func (p *KubeAPIServerParams) InternalURL() string {

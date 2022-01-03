@@ -72,6 +72,8 @@ func reconcileAgentCluster(agentCluster *agentv1.AgentCluster, hcluster *hyperv1
 			Url:                    "https://" + hcluster.Status.IgnitionEndpoint + "/ignition",
 			CaCertificateReference: &agentv1.CaCertificateReference{Name: caSecret.Name, Namespace: caSecret.Namespace}}
 	}
+
+	fmt.Println("reconcileAgentCluster reconcileAgentCluster reconcileAgentCluster", hcp.Status.ControlPlaneEndpoint.Host, hcp.Status.ControlPlaneEndpoint.Port)
 	agentCluster.Spec.ControlPlaneEndpoint = capiv1.APIEndpoint{
 		Host: hcp.Status.ControlPlaneEndpoint.Host,
 		Port: hcp.Status.ControlPlaneEndpoint.Port,

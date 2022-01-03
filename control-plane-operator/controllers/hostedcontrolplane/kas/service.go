@@ -16,7 +16,7 @@ import (
 )
 
 
-const kasRouterExternalPort = 9443
+const kasRouterExternalPort = 6443
 
 
 func ReconcileService(svc *corev1.Service, strategy *hyperv1.ServicePublishingStrategy, owner *metav1.OwnerReference, apiServerPort int, isPublic bool) error {
@@ -102,9 +102,9 @@ func ReconcileRoute(route *routev1.Route, ownerRef config.OwnerRef, private bool
 	route.Spec.TLS = &routev1.TLSConfig{
 		Termination: routev1.TLSTerminationPassthrough,
 	}
-	//route.Spec.Port = &routev1.RoutePort{
-	//	TargetPort: intstr.FromInt(kasRouterExternalPort),
-	//}
+	route.Spec.Port = &routev1.RoutePort{
+		TargetPort: intstr.FromInt(kasRouterExternalPort),
+	}
 	return nil
 }
 
@@ -115,7 +115,7 @@ func ReconcileServiceStatusWithRoute(route *routev1.Route) (host string, port in
 		fmt.Println("FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF ReconcileServiceStatusWithRoute")
 		return
 	}
-	//port = kasRouterExternalPort
+	port = kasRouterExternalPort
 	host = route.Spec.Host
 
 	fmt.Println("FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF ReconcileServiceStatusWithRoute host+port", host, port)
