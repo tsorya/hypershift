@@ -36,6 +36,7 @@ func ReconcileKASServerCertSecret(secret, ca *corev1.Secret, ownerRef config.Own
 	apiServerIPs := []string{
 		"127.0.0.1",
 		serviceIP.String(),
+		"10.1.178.20",
 	}
 	if isNumericIP(externalAPIAddress) {
 		apiServerIPs = append(apiServerIPs, externalAPIAddress)
