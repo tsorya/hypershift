@@ -191,10 +191,8 @@ func ProcessManifestList(ctx context.Context, srcDigest digest.Digest, srcManife
 			if err != nil {
 				return nil, nil, "", err
 			}
-			fmt.Println("AAAAAAAAAAAAAAAAAAAAAAAAAA", srcManifests, srcManifests[0], manifestDigest)
 			return srcManifests, srcManifests[0], manifestDigest, nil
 		default:
-			fmt.Println("AAAAAAAAAAAAAAAAAAAAAAAAAA", srcManifests, manifestList, manifestDigest)
 			return append(srcManifests, manifestList), manifestList, manifestDigest, nil
 		}
 

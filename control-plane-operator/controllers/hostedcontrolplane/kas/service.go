@@ -44,7 +44,6 @@ func ReconcileService(svc *corev1.Service, strategy *hyperv1.ServicePublishingSt
 			portSpec.NodePort = strategy.NodePort.Port
 		}
 	case hyperv1.Route:
-		fmt.Println("888888888888888888888888888888888888888")
 		svc.Spec.Type = corev1.ServiceTypeClusterIP
 	default:
 		return fmt.Errorf("invalid publishing strategy for Kube API server service: %s", strategy.Type)
@@ -54,7 +53,6 @@ func ReconcileService(svc *corev1.Service, strategy *hyperv1.ServicePublishingSt
 }
 
 func ReconcileServiceStatus(svc *corev1.Service, strategy *hyperv1.ServicePublishingStrategy, apiServerPort int) (host string, port int32, err error) {
-	fmt.Println("KAKAKAKAKAKAKAKAKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKK")
 	switch strategy.Type {
 	case hyperv1.LoadBalancer:
 		if len(svc.Status.LoadBalancer.Ingress) == 0 {
@@ -110,15 +108,12 @@ func ReconcileRoute(route *routev1.Route, ownerRef config.OwnerRef, private bool
 
 
 func ReconcileServiceStatusWithRoute(route *routev1.Route) (host string, port int32, err error) {
-	fmt.Println("DDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDD ReconcileServiceStatusWithRoute")
 	if route.Spec.Host == "" {
-		fmt.Println("FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF ReconcileServiceStatusWithRoute")
 		return
 	}
 	port = kasRouterExternalPort
 	host = route.Spec.Host
 
-	fmt.Println("FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF ReconcileServiceStatusWithRoute host+port", host, port)
 	return host, port,  nil
 }
 

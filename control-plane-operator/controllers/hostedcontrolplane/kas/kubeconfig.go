@@ -48,7 +48,6 @@ func ReconcileLocalhostKubeconfigSecret(secret, cert, ca *corev1.Secret, ownerRe
 }
 
 func ReconcileExternalKubeconfigSecret(secret, cert, ca *corev1.Secret, ownerRef config.OwnerRef, externalURL, secretKey string) error {
-	fmt.Println("ReconcileExternalKubeconfigSecretReconcileExternalKubeconfigSecretReconcileExternalKubeconfigSecretReconcileExternalKubeconfigSecretReconcileExternalKubeconfigSecret")
 	return reconcileKubeconfig(secret, cert, ca, externalURL, secretKey, manifests.KubeconfigScopeExternal, ownerRef)
 }
 
