@@ -2287,9 +2287,9 @@ func (r *HostedControlPlaneReconciler) reconcileCoreIgnitionConfig(ctx context.C
 		return ignition.ReconcileAPIServerHAProxyIgnitionConfig(haProxyConfig,
 			p.OwnerRef,
 			p.HAProxyImage,
-			p.APIServerExternalAddress,
+			"10.1.178.20",
 			p.APIServerInternalAddress,
-			p.APIServerExternalPort,
+			6080,
 			p.APIServerInternalPort)
 	}); err != nil {
 		return fmt.Errorf("failed to reconcile api server ha proxy ignition config: %w", err)
