@@ -186,8 +186,9 @@ func ProcessManifestList(ctx context.Context, srcDigest digest.Digest, srcManife
 		}
 
 		switch {
-		case len(srcManifests) > 1 && !keepManifestList:
+		case len(srcManifests) >= 1 && !keepManifestList:
 			manifestDigest, err := registryclient.ContentDigestForManifest(srcManifests[0], srcDigest.Algorithm())
+			fmt.Println("AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA")
 			if err != nil {
 				return nil, nil, "", err
 			}
