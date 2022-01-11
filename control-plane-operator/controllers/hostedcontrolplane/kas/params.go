@@ -62,6 +62,7 @@ type KubeAPIServerParams struct {
 type KubeAPIServerServiceParams struct {
 	APIServerPort  int
 	OwnerReference *metav1.OwnerReference
+	OwnerRef config.OwnerRef
 }
 
 func NewKubeAPIServerParams(ctx context.Context, hcp *hyperv1.HostedControlPlane, globalConfig globalconfig.GlobalConfig, images map[string]string, externalOAuthAddress string, externalOAuthPort int32) *KubeAPIServerParams {
@@ -316,8 +317,11 @@ func (p *KubeAPIServerParams) AuditPolicyProfile() configv1.AuditProfileType {
 	}
 }
 
-func (p *KubeAPIServerParams) ExternalURL() string {
-	return fmt.Sprintf("https://%s:%d", p.ExternalAddress, p.ExternalPort)
+func (p *KubeAPIServerParams) ExternalURL(isRouter bool) string {
+	if isRouter {
+		return fmt.Sprintf("https://%s:443", p.ExternalAddress)
+	}
+	return fmt.Sprintf("https://10.1.178.20:6080")
 }
 
 func (p *KubeAPIServerParams) InternalURL() string {
@@ -462,5 +466,6 @@ func NewKubeAPIServerServiceParams(hcp *hyperv1.HostedControlPlane) *KubeAPIServ
 	return &KubeAPIServerServiceParams{
 		APIServerPort:  port,
 		OwnerReference: config.ControllerOwnerRef(hcp),
+		OwnerRef: config.OwnerRefFrom(hcp),
 	}
 }

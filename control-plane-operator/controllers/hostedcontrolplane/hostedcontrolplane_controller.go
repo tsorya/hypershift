@@ -145,7 +145,6 @@ func (r *HostedControlPlaneReconciler) SetupWithManager(mgr ctrl.Manager) error 
 
 func (r *HostedControlPlaneReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
 	r.Log = ctrl.LoggerFrom(ctx)
-	r.Log.Info("Reconciling")
 
 	// Fetch the hostedControlPlane instance
 	hostedControlPlane := &hyperv1.HostedControlPlane{}
@@ -461,6 +460,7 @@ func (r *HostedControlPlaneReconciler) Reconcile(ctx context.Context, req ctrl.R
 		return ctrl.Result{}, fmt.Errorf("failed to update status: %w", err)
 	}
 
+	fmt.Println("GOIGN TO UDPATE")
 	// Perform the hosted control plane reconciliation
 	if err := r.update(ctx, hostedControlPlane); err != nil {
 		return ctrl.Result{}, fmt.Errorf("failed to update control plane: %w", err)
@@ -755,6 +755,16 @@ func (r *HostedControlPlaneReconciler) reconcileAPIServerService(ctx context.Con
 		}
 	}
 
+	if serviceStrategy.Type != hyperv1.Route {
+		return nil
+	}
+	kasRoute := manifests.KasServerRoute(hcp.Namespace)
+	if _, err := r.CreateOrUpdate(ctx, r.Client, kasRoute, func() error {
+		return kas.ReconcileRoute(kasRoute, p.OwnerRef, cpoutil.IsPrivateHCP(hcp))
+	}); err != nil {
+		return fmt.Errorf("failed to reconcile kas server route: %w", err)
+	}
+
 	return nil
 }
 
@@ -892,6 +902,31 @@ func (r *HostedControlPlaneReconciler) reconcileInfrastructureStatus(ctx context
 	return infraStatus, nil
 }
 
+//func (r *HostedControlPlaneReconciler) reconcileAPIServerServiceStatus(ctx context.Context, hcp *hyperv1.HostedControlPlane) (host string, port int32, err error) {
+//	serviceStrategy := servicePublishingStrategyByType(hcp, hyperv1.APIServer)
+//	if serviceStrategy == nil {
+//		err = fmt.Errorf("APIServer service strategy not specified")
+//		return
+//	}
+//
+//	if cpoutil.IsPublicHCP(hcp) {
+//		svc := manifests.KubeAPIServerService(hcp.Namespace)
+//		if err = r.Get(ctx, client.ObjectKeyFromObject(svc), svc); err != nil {
+//			if apierrors.IsNotFound(err) {
+//				err = nil
+//				return
+//			}
+//			err = fmt.Errorf("failed to get kube apiserver service: %w", err)
+//			return
+//		}
+//		p := kas.NewKubeAPIServerServiceParams(hcp)
+//		return kas.ReconcileServiceStatus(svc, serviceStrategy, p.APIServerPort)
+//
+//	}
+//
+//	return
+//}
+
 func (r *HostedControlPlaneReconciler) reconcileAPIServerServiceStatus(ctx context.Context, hcp *hyperv1.HostedControlPlane) (host string, port int32, err error) {
 	serviceStrategy := servicePublishingStrategyByType(hcp, hyperv1.APIServer)
 	if serviceStrategy == nil {
@@ -899,7 +934,32 @@ func (r *HostedControlPlaneReconciler) reconcileAPIServerServiceStatus(ctx conte
 		return
 	}
 
+	if serviceStrategy.Type == hyperv1.Route {
+		var route *routev1.Route
+		svc := manifests.KubeAPIServerService(hcp.Namespace)
+		if err = r.Get(ctx, client.ObjectKeyFromObject(svc), svc); err != nil {
+			if apierrors.IsNotFound(err) {
+				err = nil
+				return
+			}
+			err = fmt.Errorf("failed to get kube apiserver service: %w", err)
+			return
+		}
+
+		route = manifests.KasServerRoute(hcp.Namespace)
+		if err = r.Get(ctx, client.ObjectKeyFromObject(route), route); err != nil {
+			if apierrors.IsNotFound(err) {
+				err = nil
+				return
+			}
+			err = fmt.Errorf("failed to get kube-api route: %w", err)
+			return
+		}
+		return kas.ReconcileServiceStatusWithRoute(route)
+	}
+
 	if cpoutil.IsPublicHCP(hcp) {
+
 		svc := manifests.KubeAPIServerService(hcp.Namespace)
 		if err = r.Get(ctx, client.ObjectKeyFromObject(svc), svc); err != nil {
 			if apierrors.IsNotFound(err) {
@@ -1470,10 +1530,11 @@ func (r *HostedControlPlaneReconciler) reconcileKubeAPIServer(ctx context.Contex
 		return fmt.Errorf("failed to reconcile localhost kubeconfig secret: %w", err)
 	}
 
+	serviceStrategy := servicePublishingStrategyByType(hcp, hyperv1.APIServer)
 	externalKubeconfigSecret := manifests.KASExternalKubeconfigSecret(hcp.Namespace, hcp.Spec.KubeConfig)
 	if _, err := r.CreateOrUpdate(ctx, r, externalKubeconfigSecret, func() error {
 		if cpoutil.IsPublicHCP(hcp) {
-			return kas.ReconcileExternalKubeconfigSecret(externalKubeconfigSecret, clientCertSecret, rootCA, p.OwnerRef, p.ExternalURL(), p.ExternalKubeconfigKey())
+			return kas.ReconcileExternalKubeconfigSecret(externalKubeconfigSecret, clientCertSecret, rootCA, p.OwnerRef, p.ExternalURL(serviceStrategy.Type == hyperv1.Route), p.ExternalKubeconfigKey())
 		}
 		return kas.ReconcileExternalKubeconfigSecret(externalKubeconfigSecret, clientCertSecret, rootCA, p.OwnerRef, p.InternalURL(), p.ExternalKubeconfigKey())
 	}); err != nil {
@@ -1485,7 +1546,7 @@ func (r *HostedControlPlaneReconciler) reconcileKubeAPIServer(ctx context.Contex
 		if cpoutil.IsPrivateHCP(hcp) {
 			return kas.ReconcileBootstrapKubeconfigSecret(bootstrapKubeconfigSecret, bootstrapClientCertSecret, rootCA, p.OwnerRef, p.InternalURL())
 		}
-		return kas.ReconcileBootstrapKubeconfigSecret(bootstrapKubeconfigSecret, bootstrapClientCertSecret, rootCA, p.OwnerRef, p.ExternalURL())
+		return kas.ReconcileBootstrapKubeconfigSecret(bootstrapKubeconfigSecret, bootstrapClientCertSecret, rootCA, p.OwnerRef, p.ExternalURL(serviceStrategy.Type == hyperv1.Route))
 	}); err != nil {
 		return fmt.Errorf("failed to reconcile bootstrap kubeconfig secret: %w", err)
 	}
@@ -2226,9 +2287,9 @@ func (r *HostedControlPlaneReconciler) reconcileCoreIgnitionConfig(ctx context.C
 		return ignition.ReconcileAPIServerHAProxyIgnitionConfig(haProxyConfig,
 			p.OwnerRef,
 			p.HAProxyImage,
-			p.APIServerExternalAddress,
+			"10.1.178.20",
 			p.APIServerInternalAddress,
-			p.APIServerExternalPort,
+			6080,
 			p.APIServerInternalPort)
 	}); err != nil {
 		return fmt.Errorf("failed to reconcile api server ha proxy ignition config: %w", err)

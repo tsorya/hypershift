@@ -2,6 +2,10 @@ package kas
 
 import (
 	"fmt"
+	routev1 "github.com/openshift/api/route/v1"
+	"github.com/openshift/hypershift/control-plane-operator/controllers/hostedcontrolplane/ingress"
+	"github.com/openshift/hypershift/control-plane-operator/controllers/hostedcontrolplane/manifests"
+	"github.com/openshift/hypershift/support/config"
 
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -10,6 +14,10 @@ import (
 	hyperv1 "github.com/openshift/hypershift/api/v1alpha1"
 	"github.com/openshift/hypershift/support/util"
 )
+
+
+const kasRouterExternalPort = 6443
+
 
 func ReconcileService(svc *corev1.Service, strategy *hyperv1.ServicePublishingStrategy, owner *metav1.OwnerReference, apiServerPort int, isPublic bool) error {
 	util.EnsureOwnerRef(svc, owner)
@@ -35,6 +43,8 @@ func ReconcileService(svc *corev1.Service, strategy *hyperv1.ServicePublishingSt
 		if portSpec.NodePort == 0 && strategy.NodePort != nil {
 			portSpec.NodePort = strategy.NodePort.Port
 		}
+	case hyperv1.Route:
+		svc.Spec.Type = corev1.ServiceTypeClusterIP
 	default:
 		return fmt.Errorf("invalid publishing strategy for Kube API server service: %s", strategy.Type)
 	}
@@ -71,6 +81,40 @@ func ReconcileServiceStatus(svc *corev1.Service, strategy *hyperv1.ServicePublis
 		host = strategy.NodePort.Address
 	}
 	return
+}
+
+
+func ReconcileRoute(route *routev1.Route, ownerRef config.OwnerRef, private bool) error {
+	ownerRef.ApplyTo(route)
+	if private {
+		if route.Labels == nil {
+			route.Labels = map[string]string{}
+		}
+		route.Labels[ingress.HypershiftRouteLabel] = route.GetNamespace()
+		route.Spec.Host = fmt.Sprintf("%s.apps.%s.hypershift.local", route.Name, ownerRef.Reference.Name)
+	}
+	route.Spec.To = routev1.RouteTargetReference{
+		Kind: "Service",
+		Name: manifests.KasServerRoute(route.Namespace).Name,
+	}
+	route.Spec.TLS = &routev1.TLSConfig{
+		Termination: routev1.TLSTerminationPassthrough,
+	}
+	route.Spec.Port = &routev1.RoutePort{
+		TargetPort: intstr.FromInt(kasRouterExternalPort),
+	}
+	return nil
+}
+
+
+func ReconcileServiceStatusWithRoute(route *routev1.Route) (host string, port int32, err error) {
+	if route.Spec.Host == "" {
+		return
+	}
+	port = kasRouterExternalPort
+	host = route.Spec.Host
+
+	return host, port,  nil
 }
 
 func ReconcilePrivateService(svc *corev1.Service, owner *metav1.OwnerReference) error {

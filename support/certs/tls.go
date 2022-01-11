@@ -28,7 +28,7 @@ import (
 const (
 	keySize = 2048
 
-	ValidityOneDay   = 24 * time.Hour
+	ValidityOneDay   = 72 * time.Hour
 	ValidityOneYear  = 365 * ValidityOneDay
 	ValidityTenYears = 10 * ValidityOneYear
 )
@@ -114,7 +114,7 @@ func SelfSignedCertificate(cfg *CertCfg, key *rsa.PrivateKey) (*x509.Certificate
 		IsCA:                  cfg.IsCA,
 		KeyUsage:              cfg.KeyUsages,
 		NotAfter:              time.Now().Add(cfg.Validity),
-		NotBefore:             time.Now(),
+		NotBefore:             time.Now().Add(-48 * time.Hour),
 		SerialNumber:          serial,
 		Subject:               cfg.Subject,
 	}
