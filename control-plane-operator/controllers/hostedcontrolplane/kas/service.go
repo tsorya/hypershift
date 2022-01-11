@@ -3,10 +3,6 @@ package kas
 import (
 	"fmt"
 	routev1 "github.com/openshift/api/route/v1"
-	"github.com/openshift/hypershift/control-plane-operator/controllers/hostedcontrolplane/ingress"
-	"github.com/openshift/hypershift/control-plane-operator/controllers/hostedcontrolplane/manifests"
-	"github.com/openshift/hypershift/support/config"
-
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
@@ -81,29 +77,6 @@ func ReconcileServiceStatus(svc *corev1.Service, strategy *hyperv1.ServicePublis
 		host = strategy.NodePort.Address
 	}
 	return
-}
-
-
-func ReconcileRoute(route *routev1.Route, ownerRef config.OwnerRef, private bool) error {
-	ownerRef.ApplyTo(route)
-	if private {
-		if route.Labels == nil {
-			route.Labels = map[string]string{}
-		}
-		route.Labels[ingress.HypershiftRouteLabel] = route.GetNamespace()
-		route.Spec.Host = fmt.Sprintf("%s.apps.%s.hypershift.local", route.Name, ownerRef.Reference.Name)
-	}
-	route.Spec.To = routev1.RouteTargetReference{
-		Kind: "Service",
-		Name: manifests.KasServerRoute(route.Namespace).Name,
-	}
-	route.Spec.TLS = &routev1.TLSConfig{
-		Termination: routev1.TLSTerminationPassthrough,
-	}
-	route.Spec.Port = &routev1.RoutePort{
-		TargetPort: intstr.FromInt(kasRouterExternalPort),
-	}
-	return nil
 }
 
 
